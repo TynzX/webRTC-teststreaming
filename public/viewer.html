@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viewer</title>
+</head>
+<body>
+    <h1>Viewer</h1>
+    <div id="messages"></div>
+    <video id="video" autoplay playsinline controls></video>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io.connect(window.location.origin);
+        const video = document.getElementById('video');
+        let videoChunks = [];
+
+        const messagesDiv = document.getElementById('messages');
+
+     
+        socket.on('video-chunk', (chunk) => {
+            console.log('Received video chunk of size:', chunk.byteLength);
+
+          
+            videoChunks.push(new Uint8Array(chunk));
+        });
+
+       
+        socket.on('video-end', () => {
+            console.log('Video stream ended');
+
+            
+            const blob = new Blob(videoChunks, { type: 'video/mp4' });
+            const url = URL.createObjectURL(blob);
+
+       
+            video.src = url;
+            video.play();
+
+
+            videoChunks = [];
+        });
+
+     
+        socket.on('video-error', (error) => {
+            console.error('Error streaming video:', error);
+        });
+
+    
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            // socket.emit('start-stream'); 
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+        });
+    </script>
+</body>
+</html>
